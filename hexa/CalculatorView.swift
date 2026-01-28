@@ -38,12 +38,19 @@ struct CalculatorView: View {
     }
     
     private func parseInput(_ text: String) {
-        let cleaned = text.trimmingCharacters(in: .whitespaces).lowercased()
+        let cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !cleaned.isEmpty else {
             ctx.model.currentValue = 0
             return
         }
         
+        // Try to evaluate as expression first
+        if let result = evaluateExpression(cleaned) {
+            ctx.model.currentValue = result & ctx.bitWidth.mask
+            return
+        }
+        
+        // Fall back to single value parsing
         var value: UInt64? = nil
         
         // Auto-detect prefixes
@@ -61,6 +68,67 @@ struct CalculatorView: View {
             ctx.model.currentValue = v & ctx.bitWidth.mask
         }
     }
+    
+    private func evaluateExpression(_ expr: String) -> UInt64? {
+        // Simple expression parser for: value op value
+        let operators: [(String, (UInt64, UInt64) -> UInt64)] = [
+            ("<<", { $0 << $1 }),
+            (">>", { $0 >> $1 }),
+            ("+", { $0 &+ $1 }),
+            ("-", { $0 &- $1 }),
+            ("*", { $0 &* $1 }),
+            ("/", { $1 == 0 ? 0 : $0 / $1 }),
+            ("%", { $1 == 0 ? 0 : $0 % $1 }),
+            ("&", { $0 & $1 }),
+            ("|", { $0 | $1 }),
+            ("^", { $0 ^ $1 }),
+        ]
+        
+        for (op, fn) in operators {
+            // Find operator not inside a prefix
+            if let range = findOperator(op, in: expr) {
+                let leftStr = String(expr[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+                let rightStr = String(expr[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+                
+                if let left = parseValue(leftStr), let right = parseValue(rightStr) {
+                    return fn(left, right)
+                }
+            }
+        }
+        return nil
+    }
+    
+    private func findOperator(_ op: String, in expr: String) -> Range<String.Index>? {
+        var searchStart = expr.startIndex
+        
+        while let range = expr.range(of: op, range: searchStart..<expr.endIndex) {
+            // Make sure it's not part of 0x prefix
+            let beforeStart = range.lowerBound
+            if beforeStart > expr.startIndex {
+                let charBefore = expr[expr.index(before: beforeStart)]
+                // Skip if this looks like part of a hex prefix (0x)
+                if op == "x" || (charBefore == "0" && (op == "x" || op == "b" || op == "o")) {
+                    searchStart = range.upperBound
+                    continue
+                }
+            }
+            return range
+        }
+        return nil
+    }
+    
+    private func parseValue(_ str: String) -> UInt64? {
+        let cleaned = str.lowercased()
+        if cleaned.hasPrefix("0x") {
+            return UInt64(cleaned.dropFirst(2), radix: 16)
+        } else if cleaned.hasPrefix("0b") {
+            return UInt64(cleaned.dropFirst(2), radix: 2)
+        } else if cleaned.hasPrefix("0o") {
+            return UInt64(cleaned.dropFirst(2), radix: 8)
+        } else {
+            return UInt64(cleaned, radix: ctx.base.radix)
+        }
+    }
 }
 
 // MARK: - Display Area
@@ -74,13 +142,15 @@ struct DisplayArea: View {
             // Base selector - subtle, top-right aligned
             HStack {
                 // Close button
-                Button(action: { NSApplication.shared.terminate(nil) }) {
+                Button(action: {
+                    NSApplication.shared.keyWindow?.close()
+                }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
                         .foregroundStyle(Color.secondary)
                 }
                 .buttonStyle(.plain)
-                .help("Quit hexa")
+                .help("Dismiss")
                 
                 // Pending operation indicator
                 if ctx.hasPendingOp {
@@ -114,12 +184,12 @@ struct DisplayArea: View {
                     .foregroundStyle(Color.secondary)
                     .padding(.top, 8)
                 
-                TextField("0", text: $inputText, axis: .vertical)
+                TextEditor(text: $inputText)
                     .focused(inputFocused)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 32, weight: .light, design: .monospaced))
-                    .multilineTextAlignment(.trailing)
-                    .lineLimit(1...5)
+                    .font(.system(size: 28, weight: .light, design: .monospaced))
+                    .scrollContentBackground(.hidden)
+                    .frame(minHeight: 40, maxHeight: 120)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal)
             
@@ -306,14 +376,25 @@ struct ControlsArea: View {
             }
             .padding(.horizontal)
             
-            // Tip
-            VStack(spacing: 2) {
+            // Footer
+            VStack(spacing: 4) {
                 Text("Type directly • Use 0x 0b 0o prefixes")
                     .font(.system(size: 10))
                     .foregroundStyle(Color.secondary)
-                Link("Made by Kush S.", destination: URL(string: "https://skushagra.com")!)
+                HStack(spacing: 4) {
+                    Link("Made by Kush S.", destination: URL(string: "https://skushagra.com")!)
+                        .font(.system(size: 10))
+                        .underline()
+                    Text("•")
+                        .font(.system(size: 10))
+                        .foregroundStyle(Color.secondary)
+                    Button("Quit") {
+                        NSApplication.shared.terminate(nil)
+                    }
                     .font(.system(size: 10))
-                    .underline()
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.secondary)
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal)
