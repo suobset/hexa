@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hexa — A programmer's calculator for the Mac menu bar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --border: #2a2a2a;
+            --text: #f5f5f5;
+            --text-secondary: #888;
+            --accent: #007AFF;
+            --hex: #FF9500;
+            --dec: #007AFF;
+            --oct: #34C759;
+            --bin: #AF52DE;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 1rem 2rem;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav .logo {
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        nav .logo span {
+            background: linear-gradient(135deg, var(--hex), var(--bin));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        nav .links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: var(--text);
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 8rem 2rem 4rem;
+        }
+
+        .icon {
+            width: 128px;
+            height: 128px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 122, 255, 0.2);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        h1 .beta {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--bin);
+            vertical-align: super;
+        }
+
+        .tagline {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-weight: 400;
+        }
+
+        .pitch {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            padding: 0.875rem 1.75rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0066d6;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #1a1a1a;
+            border-color: #3a3a3a;
+        }
+
+        .meta {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .screenshot {
+            margin-top: 4rem;
+            max-width: 400px;
+            border-radius: 12px;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+        }
+
+        section {
+            padding: 6rem 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.01em;
+        }
+
+        .story {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .story p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .bases {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 4rem;
+        }
+
+        .base-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .base-card .label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .base-card.hex .label { color: var(--hex); }
+        .base-card.dec .label { color: var(--dec); }
+        .base-card.oct .label { color: var(--oct); }
+        .base-card.bin .label { color: var(--bin); }
+
+        .base-card .value {
+            font-family: 'SF Mono', Menlo, monospace;
+            font-size: 1.25rem;
+            font-weight: 500;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .feature {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .feature .icon-small {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .operators {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 2rem 0;
+        }
+
+        .op {
+            font-family: 'SF Mono', Menlo, monospace;
+            font-size: 0.9rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+
+        .op.bitwise {
+            border-color: var(--bin);
+            color: var(--bin);
+        }
+
+        .requirements {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .req h4 {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        .req p {
+            font-weight: 500;
+        }
+
+        footer {
+            text-align: center;
+            padding: 4rem 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        footer .links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            color: var(--text);
+        }
+
+        footer .credits {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        footer .credits a {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .tagline { font-size: 1.25rem; }
+            .bases { grid-template-columns: repeat(2, 1fr); }
+            .features { grid-template-columns: 1fr; }
+            .requirements { grid-template-columns: 1fr; }
+            nav .links { gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="logo">
+            <span>#</span> Hexa
+        </div>
+        <div class="links">
+            <a href="#features">Features</a>
+            <a href="https://github.com/suobset/hexa">GitHub</a>
+            <a href="https://skushagra.com">Created by Kush S.</a>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="icon"><img src="./hexaIcon.png" alt="Hexa icon" style="width: 100%; height: 100%; border-radius: 28px;"></div>
+        <h1>Hexa</h1>
+        <p class="tagline">A programmer's calculator for the Mac menu bar.</p>
+        <p class="pitch">Hex, decimal, octal, binary. Instant conversion. Always one click away.</p>
+        
+        <div class="cta-group">
+            <a href="https://github.com/suobset/hexa/raw/refs/heads/main/distribution/Hexa-Installer.dmg" class="btn btn-primary">
+                ↓ Download (DMG, Universal)
+            </a>
+            <a href="https://github.com/suobset/hexa" class="btn btn-secondary">
+                ★ Star on GitHub
+            </a>
+        </div>
+        <p class="meta">v1.0.0 · ~1MB · Universal Binary</p>
+
+        <!-- Replace with actual screenshot -->
+        <img src="./hexa.png" alt="Hexa screenshot" class="screenshot">
+    </div>
+
+    <section>
+        <div class="story">
+            <h2>The calculator that should exist.</h2>
+            <p>Every programmer needs to convert between hex and decimal. Check a bitmask. Do quick bitwise math. macOS Calculator has a programmer mode buried in a menu, and it's clunky.</p>
+            <br>
+            <p>Hexa lives in your menu bar. Click it, type a value, see all representations instantly. Type expressions like <code>0xdead + 0xbeef</code> and watch it evaluate live. Native Swift, native SwiftUI, opens instantly.</p>
+        </div>
+
+        <div class="bases">
+            <div class="base-card hex">
+                <div class="label">HEX</div>
+                <div class="value">DEAD BEEF</div>
+            </div>
+            <div class="base-card dec">
+                <div class="label">DEC</div>
+                <div class="value">3735928559</div>
+            </div>
+            <div class="base-card oct">
+                <div class="label">OCT</div>
+                <div class="value">33653337357</div>
+            </div>
+            <div class="base-card bin">
+                <div class="label">BIN</div>
+                <div class="value">1101 1110...</div>
+            </div>
+        </div>
+
+        <h2 id="features">Built for the Mac</h2>
+        <div class="features">
+            <div class="feature">
+                <div class="icon-small">📍</div>
+                <h3>Menu Bar Native</h3>
+                <p>Lives in your menu bar. One click to open, one click to dismiss. Always there when you need it.</p>
+            </div>
+            <div class="feature">
+                <div class="icon-small">⚡</div>
+                <h3>Live Evaluation</h3>
+                <p>Type expressions directly: <code>0xff + 0x10</code>, <code>255 << 8</code>, <code>0b1010 | 0b0101</code>. Results update as you type.</p>
+            </div>
+            <div class="feature">
+                <div class="icon-small">🔢</div>
+                <h3>All Bases, All the Time</h3>
+                <p>See hex, decimal, octal, and binary simultaneously. Use 0x, 0b, 0o prefixes freely in expressions.</p>
+            </div>
+            <div class="feature">
+                <div class="icon-small">📐</div>
+                <h3>Bit Width Control</h3>
+                <p>Toggle between 8, 16, 32, and 64-bit modes. Signed and unsigned display.</p>
+            </div>
+            <div class="feature">
+                <div class="icon-small">📋</div>
+                <h3>One-Click Copy</h3>
+                <p>Hover over any conversion to reveal copy button. Values copied clean, without formatting.</p>
+            </div>
+            <div class="feature">
+                <div class="icon-small">🍎</div>
+                <h3>Universal Binary</h3>
+                <p>Native on Apple Silicon and Intel. Pure Swift and SwiftUI. No Electron, no web views.</p>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 4rem;">Operators</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Full expression support with chained operations.</p>
+        
+        <div class="operators">
+            <span class="op">+</span>
+            <span class="op">−</span>
+            <span class="op">×</span>
+            <span class="op">÷</span>
+            <span class="op">%</span>
+            <span class="op bitwise">AND</span>
+            <span class="op bitwise">OR</span>
+            <span class="op bitwise">XOR</span>
+            <span class="op bitwise">NOT</span>
+            <span class="op bitwise">&lt;&lt;</span>
+            <span class="op bitwise">&gt;&gt;</span>
+        </div>
+
+        <h2 style="margin-top: 4rem;">Requirements</h2>
+        <div class="requirements">
+            <div class="req">
+                <h4>Operating System</h4>
+                <p>macOS 14.0 (Sonoma) or later</p>
+            </div>
+            <div class="req">
+                <h4>Architecture</h4>
+                <p>Apple Silicon or Intel Mac</p>
+            </div>
+        </div>
+
+        <p style="color: var(--text-secondary); margin-top: 2rem; font-size: 0.9rem;">
+            <strong>Installation:</strong> Open DMG → Drag Hexa to Applications → Launch from Applications (first time) or click menu bar icon.
+        </p>
+    </section>
+
+    <footer>
+        <div class="links">
+            <a href="https://github.com/suobset/hexa">GitHub</a>
+            <a href="https://github.com/suobset/hexa/releases">Releases</a>
+            <a href="https://github.com/suobset/hexa/issues">Issues</a>
+        </div>
+        <p class="credits">
+            Built by <a href="https://skushagra.com">Kushagra</a>. Open source under MIT.
+            <br><br>
+            If you find Hexa useful, a <a href="https://github.com/suobset/hexa">⭐ star on GitHub</a> means a lot.
+        </p>
+    </footer>
+</body>
+</html>
