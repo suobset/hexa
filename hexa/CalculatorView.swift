@@ -70,55 +70,90 @@ struct CalculatorView: View {
     }
     
     private func evaluateExpression(_ expr: String) -> UInt64? {
-        // Simple expression parser for: value op value
-        let operators: [(String, (UInt64, UInt64) -> UInt64)] = [
-            ("<<", { $0 << $1 }),
-            (">>", { $0 >> $1 }),
-            ("+", { $0 &+ $1 }),
-            ("-", { $0 &- $1 }),
-            ("*", { $0 &* $1 }),
-            ("/", { $1 == 0 ? 0 : $0 / $1 }),
-            ("%", { $1 == 0 ? 0 : $0 % $1 }),
-            ("&", { $0 & $1 }),
-            ("|", { $0 | $1 }),
-            ("^", { $0 ^ $1 }),
-        ]
+        // Tokenize the expression
+        var tokens: [String] = []
+        var current = ""
+        var i = expr.startIndex
         
-        for (op, fn) in operators {
-            // Find operator not inside a prefix
-            if let range = findOperator(op, in: expr) {
-                let leftStr = String(expr[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
-                let rightStr = String(expr[range.upperBound...]).trimmingCharacters(in: .whitespaces)
-                
-                if let left = parseValue(leftStr), let right = parseValue(rightStr) {
-                    return fn(left, right)
-                }
-            }
-        }
-        return nil
-    }
-    
-    private func findOperator(_ op: String, in expr: String) -> Range<String.Index>? {
-        var searchStart = expr.startIndex
-        
-        while let range = expr.range(of: op, range: searchStart..<expr.endIndex) {
-            // Make sure it's not part of 0x prefix
-            let beforeStart = range.lowerBound
-            if beforeStart > expr.startIndex {
-                let charBefore = expr[expr.index(before: beforeStart)]
-                // Skip if this looks like part of a hex prefix (0x)
-                if op == "x" || (charBefore == "0" && (op == "x" || op == "b" || op == "o")) {
-                    searchStart = range.upperBound
+        while i < expr.endIndex {
+            let c = expr[i]
+            
+            // Check for two-char operators
+            if i < expr.index(before: expr.endIndex) {
+                let next = expr[expr.index(after: i)]
+                let twoChar = String(c) + String(next)
+                if twoChar == "<<" || twoChar == ">>" {
+                    if !current.isEmpty {
+                        tokens.append(current)
+                        current = ""
+                    }
+                    tokens.append(twoChar)
+                    i = expr.index(i, offsetBy: 2)
                     continue
                 }
             }
-            return range
+            
+            // Check for prefix (0x, 0b, 0o)
+            if (c == "x" || c == "b" || c == "o") && current == "0" {
+                current.append(c)
+                i = expr.index(after: i)
+                continue
+            }
+            
+            // Single char operators
+            if "+-*/%&|^".contains(c) {
+                if !current.isEmpty {
+                    tokens.append(current)
+                    current = ""
+                }
+                tokens.append(String(c))
+            } else if !c.isWhitespace {
+                current.append(c)
+            }
+            
+            i = expr.index(after: i)
         }
-        return nil
+        
+        if !current.isEmpty {
+            tokens.append(current)
+        }
+        
+        // Need at least one value
+        guard !tokens.isEmpty else { return nil }
+        
+        // Parse first value
+        guard var result = parseValue(tokens[0]) else { return nil }
+        
+        // Process operator-value pairs
+        var idx = 1
+        while idx + 1 < tokens.count {
+            let op = tokens[idx]
+            guard let operand = parseValue(tokens[idx + 1]) else { return nil }
+            
+            switch op {
+            case "+": result = result &+ operand
+            case "-": result = result &- operand
+            case "*": result = result &* operand
+            case "/": result = operand == 0 ? 0 : result / operand
+            case "%": result = operand == 0 ? 0 : result % operand
+            case "&": result = result & operand
+            case "|": result = result | operand
+            case "^": result = result ^ operand
+            case "<<": result = result << operand
+            case ">>": result = result >> operand
+            default: return nil
+            }
+            
+            idx += 2
+        }
+        
+        return result
     }
     
     private func parseValue(_ str: String) -> UInt64? {
-        let cleaned = str.lowercased()
+        let cleaned = str.lowercased().trimmingCharacters(in: .whitespaces)
+        if cleaned.isEmpty { return nil }
+        
         if cleaned.hasPrefix("0x") {
             return UInt64(cleaned.dropFirst(2), radix: 16)
         } else if cleaned.hasPrefix("0b") {
