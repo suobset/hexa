@@ -10,8 +10,9 @@ import SwiftUI
 @main
 struct hexaApp: App {
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        MenuBarExtra("hexa", systemImage: "number.square") {
+            CalculatorView()
         }
+        .menuBarExtraStyle(.window)
     }
 }
