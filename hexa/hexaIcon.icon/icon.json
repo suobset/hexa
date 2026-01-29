@@ -22,7 +22,7 @@
           "image-name" : "icon-512-maskable.png",
           "name" : "icon-512-maskable",
           "position" : {
-            "scale" : 1,
+            "scale" : 2,
             "translation-in-points" : [
               0,
               0
