@@ -76,6 +76,13 @@ Build and run in Xcode (⌘R).
 
 MIT License. See [LICENSE](LICENSE) for details.
 
+## Credits
+
+Hexa is a small utility, but distributing it would not have been possible without the following projects:
+
+1. [create-dmg](https://github.com/create-dmg/create-dmg): MIT License Command Line Utility to create `.dmg` files for distribution.
+2. [Icon Kitchen](https://icon.kitchen): Website by [Roman Urik](https://x.com/romannurik) to mockup app icons quickly.
+
 ## Author
 
 Built by [Kushagra Srivastava](https://skushagra.com).
