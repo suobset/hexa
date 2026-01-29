@@ -19,9 +19,15 @@
     {
       "layers" : [
         {
-          "blend-mode" : "darken",
-          "image-name" : "0xCAFEBABE.png",
-          "name" : "0xCAFEBABE"
+          "image-name" : "icon-512-maskable.png",
+          "name" : "icon-512-maskable",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
         }
       ],
       "shadow" : {
